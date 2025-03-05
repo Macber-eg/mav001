@@ -1,0 +1,175 @@
+-- Fix ambiguous column references in memory system
+
+-- Drop existing functions to recreate them with proper table aliases
+DROP FUNCTION IF EXISTS search_memory_vectors(VECTOR(1536), UUID, FLOAT, INT);
+
+-- Recreate search function with explicit table aliases
+CREATE OR REPLACE FUNCTION search_memory_vectors(
+  query_embedding VECTOR(1536),
+  eve_id_param UUID,
+  match_threshold FLOAT,
+  match_count INT
+)
+RETURNS TABLE (
+  id UUID,
+  eve_id UUID,
+  type TEXT,
+  key TEXT,
+  value JSONB,
+  importance INTEGER,
+  last_accessed TIMESTAMPTZ,
+  expiry TIMESTAMPTZ,
+  metadata JSONB,
+  similarity FLOAT
+) AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    memories.id,
+    memories.eve_id,
+    memories.type,
+    memories.key,
+    memories.value,
+    memories.importance,
+    memories.last_accessed,
+    memories.expiry,
+    memories.metadata,
+    1 - (memory_vectors.embedding <=> query_embedding) AS similarity
+  FROM
+    memory_vectors
+  JOIN
+    memories ON memories.id = memory_vectors.memory_id
+  WHERE
+    memories.eve_id = eve_id_param
+    AND 1 - (memory_vectors.embedding <=> query_embedding) > match_threshold
+  ORDER BY
+    similarity DESC
+  LIMIT
+    match_count;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Drop existing policies to recreate them with proper table aliases
+DO $$ 
+BEGIN
+  -- Drop memories policies
+  DROP POLICY IF EXISTS "memory_view" ON memories;
+  DROP POLICY IF EXISTS "memory_create" ON memories;
+  DROP POLICY IF EXISTS "memory_update" ON memories;
+  DROP POLICY IF EXISTS "memory_delete" ON memories;
+  
+  -- Drop memory_vectors policies
+  DROP POLICY IF EXISTS "memory_vector_view" ON memory_vectors;
+  DROP POLICY IF EXISTS "memory_vector_create" ON memory_vectors;
+  DROP POLICY IF EXISTS "memory_vector_delete" ON memory_vectors;
+END $$;
+
+-- Recreate policies with explicit table aliases
+CREATE POLICY "memory_view" 
+  ON memories 
+  FOR SELECT 
+  TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM users AS u
+      WHERE u.id = auth.uid()
+      AND u.company_id = memories.company_id
+    )
+  );
+
+CREATE POLICY "memory_create" 
+  ON memories 
+  FOR INSERT 
+  TO authenticated 
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM users AS u
+      WHERE u.id = auth.uid()
+      AND u.company_id = memories.company_id
+    )
+  );
+
+CREATE POLICY "memory_update" 
+  ON memories 
+  FOR UPDATE
+  TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM users AS u
+      WHERE u.id = auth.uid()
+      AND u.company_id = memories.company_id
+    )
+  );
+
+CREATE POLICY "memory_delete" 
+  ON memories 
+  FOR DELETE
+  TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM users AS u
+      WHERE u.id = auth.uid()
+      AND u.company_id = memories.company_id
+    )
+  );
+
+CREATE POLICY "memory_vector_view" 
+  ON memory_vectors 
+  FOR SELECT 
+  TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM memories AS m
+      JOIN users AS u ON u.company_id = m.company_id
+      WHERE u.id = auth.uid()
+      AND m.id = memory_vectors.memory_id
+    )
+  );
+
+CREATE POLICY "memory_vector_create" 
+  ON memory_vectors 
+  FOR INSERT 
+  TO authenticated 
+  WITH CHECK (
+    EXISTS (
+      SELECT 1
+      FROM memories AS m
+      JOIN users AS u ON u.company_id = m.company_id
+      WHERE u.id = auth.uid()
+      AND m.id = memory_vectors.memory_id
+    )
+  );
+
+CREATE POLICY "memory_vector_delete" 
+  ON memory_vectors 
+  FOR DELETE
+  TO authenticated 
+  USING (
+    EXISTS (
+      SELECT 1
+      FROM memories AS m
+      JOIN users AS u ON u.company_id = m.company_id
+      WHERE u.id = auth.uid()
+      AND m.id = memory_vectors.memory_id
+    )
+  );
+
+-- Ensure indexes exist with explicit names
+DROP INDEX IF EXISTS idx_memories_eve_id;
+DROP INDEX IF EXISTS idx_memories_company_id;
+DROP INDEX IF EXISTS idx_memories_type;
+DROP INDEX IF EXISTS idx_memories_key;
+DROP INDEX IF EXISTS idx_memories_last_accessed;
+DROP INDEX IF EXISTS idx_memory_vectors_memory_id;
+
+CREATE INDEX idx_memories_eve_id ON memories(eve_id);
+CREATE INDEX idx_memories_company_id ON memories(company_id);
+CREATE INDEX idx_memories_type ON memories(type);
+CREATE INDEX idx_memories_key ON memories(key);
+CREATE INDEX idx_memories_last_accessed ON memories(last_accessed);
+CREATE INDEX idx_memory_vectors_memory_id ON memory_vectors(memory_id);

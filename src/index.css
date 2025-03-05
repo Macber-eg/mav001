@@ -1,0 +1,178 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: #0A0A0A;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Neon text effect */
+.text-glow {
+  text-shadow: 0 0 10px rgba(0, 255, 178, 0.5);
+}
+
+/* Gradient backgrounds */
+.bg-gradient-dark {
+  background: linear-gradient(to bottom right, #0A0A0A, #1A1A40);
+}
+
+/* Card hover effects */
+.card-hover {
+  transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(0, 255, 178, 0.2);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #121212;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #2A2A2A;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #3A3A3A;
+}
+
+/* Input focus styles */
+input:focus, textarea:focus, select:focus {
+  box-shadow: 0 0 0 2px rgba(0, 255, 178, 0.2);
+}
+
+/* Button hover effects */
+.btn-primary {
+  @apply bg-black text-primary border border-primary transition-all duration-300;
+}
+
+.btn-primary:hover {
+  @apply bg-black/90 shadow-neon;
+}
+
+/* Particle animation */
+@keyframes float {
+  0%, 100% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  50% {
+    transform: translate(100px, -100px);
+    opacity: 0.5;
+  }
+  75% {
+    opacity: 1;
+  }
+}
+
+/* Grid cell pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 0.1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+}
+
+/* Card styles */
+.card {
+  @apply bg-dark-surface border border-dark-border rounded-lg overflow-hidden transition-all duration-300;
+}
+
+.card:hover {
+  @apply shadow-neon;
+}
+
+/* Status badges */
+.badge {
+  @apply px-2 py-1 rounded-full text-xs font-medium;
+}
+
+.badge-success {
+  @apply bg-success/20 text-success;
+}
+
+.badge-warning {
+  @apply bg-warning/20 text-warning;
+}
+
+.badge-error {
+  @apply bg-error/20 text-error;
+}
+
+.badge-info {
+  @apply bg-info/20 text-info;
+}
+
+/* Loading spinner */
+.loading-spinner {
+  @apply animate-spin rounded-full border-2 border-primary border-t-transparent;
+}
+
+/* Fix for white screen */
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgb(18 18 18);
+}
+
+.text-secondary {
+    --tw-text-opacity: 1;
+    color: rgb(87 255 178);
+}
+.text-gray-900 {
+    --tw-text-opacity: 1;
+    color: rgb(156 163 175);
+}
+
+.text-blue-600 {
+    --tw-text-opacity: 1;
+    color: #fff;
+}
+
+.bg-gray-50 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(42 42 42);
+}
+
+.border-gray-300 {
+    --tw-border-opacity: 1;
+    border-color: rgb(87 255 178);
+}
+
+.bg-gray-100 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(87 255 178);
+}
+
+.text-gray-700 {
+    --tw-text-opacity: 1;
+    color: rgb(155 162 173);
+}
